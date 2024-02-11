@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
 class Buttons extends StatelessWidget {
-  final String textInButton;
+  final String textInButton,display;
+  final void Function() numberAndOperandClicked;
+
+  // how to change display when button clicked
+
+  const Buttons({super.key,required this.textInButton,required this.display, required this.numberAndOperandClicked});
 
 
-  const Buttons({super.key,required this.textInButton});
 
   @override
   Widget build(BuildContext context) {
@@ -29,16 +33,15 @@ class Buttons extends StatelessWidget {
           color: backgroundColor,
           shape: BoxShape.circle,
         ),
-        margin: const EdgeInsets.all(20.0),
+        margin: const EdgeInsets.all(10.0),
         child:  TextButton(
-          onPressed: null,
+          onPressed: numberAndOperandClicked,
           child: Text( textInButton,
             style: TextStyle(
               color: textColor,
               fontSize: 20.0,
             ),
           ),
-
         ),
       )
     ;
