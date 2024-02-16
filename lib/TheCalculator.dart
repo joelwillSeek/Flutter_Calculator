@@ -1,3 +1,6 @@
+import 'dart:ffi';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'TheButtonMaker.dart';
@@ -14,7 +17,8 @@ class _CalculatorState extends State<Calculator> {
   String display = "0.0";
   String previouslyEvaluated = "0.0";
   bool inBracket = false;
-  String operationTodo = "";
+  List<String>? holdsNumbersAndOperandInTheBracket;
+  //String operationTodo = "";
 
   final List<String> listOfNumberAndOperand = const <String>[
     "C",
@@ -130,7 +134,9 @@ class _CalculatorState extends State<Calculator> {
     });
   }
 
-  double? evaluate(double firstValue, double secondValue, String symbol) {
+  double? evaluate(String x, String y, String symbol) {
+    double? firstValue = double.parse(x);
+    double? secondValue = double.parse(y);
     switch (symbol) {
       case "+":
         return firstValue + secondValue;
@@ -140,23 +146,37 @@ class _CalculatorState extends State<Calculator> {
         return firstValue * secondValue;
       case "/":
         return firstValue / secondValue;
+      case "%":
+        return firstValue % secondValue;
       default:
         return null;
     }
   }
 
+  bool alrightToEvaluate() {
+    return previouslyEvaluated != initialValue &&
+        previouslyEvaluated.isNotEmpty;
+  }
+
   void numberAndOperandClicked(String symbol) {
     switch (symbol) {
       case "+" || "-" || "x" || "/" || "%":
-        if (previouslyEvaluated != initialValue &&
-            previouslyEvaluated.isNotEmpty) {
-          double? result = evaluate(
-              double.parse(previouslyEvaluated), double.parse(display), symbol);
-          if (result == null) {
-            print("Wrong Operation.");
+        if (alrightToEvaluate()) {
+          if (!inBracket) {
+            double? result = evaluate(previouslyEvaluated, display, symbol);
+            if (result == null) {
+              if (kDebugMode) {
+                print("Wrong Operation.");
+              }
+            } else {
+              setState(() {
+                previouslyEvaluated = result.toString();
+                display = initialValue;
+              });
+            }
           } else {
+            holdsNumbersAndOperandInTheBracket?.add(display);
             setState(() {
-              previouslyEvaluated = result.toString();
               display = initialValue;
             });
           }
@@ -167,7 +187,6 @@ class _CalculatorState extends State<Calculator> {
                 : null;
             previouslyEvaluated = display;
             display = initialValue;
-            operationTodo = symbol;
           });
         }
         break;
@@ -180,7 +199,35 @@ class _CalculatorState extends State<Calculator> {
 
         break;
 
+      case "()":
+        if (!inBracket) {
+          double? result = evaluate(previouslyEvaluated, display, "+");
+          if (result == null) {
+            if (kDebugMode) {
+              print("Wrong Operation.");
+            }
+          } else {
+            setState(() {
+              previouslyEvaluated = result.toString();
+              display = initialValue;
+              //notify the user of the bracket
+            });
+          }
+        } else {
+          String resultFromBracket = calculateInBracket();
+          double? overAllResult =
+              evaluate(previouslyEvaluated, resultFromBracket, "+");
+          setState(() {
+            previouslyEvaluated = overAllResult.toString();
+            display = initialValue;
+          });
+        }
+        inBracket = !inBracket;
+
+        break;
+
       case "=":
+        //just display the result if the previous result is empty if not then calculate
         break;
       default:
         setState(() {
@@ -188,5 +235,34 @@ class _CalculatorState extends State<Calculator> {
           display += symbol;
         });
     }
+  }
+
+  String calculateInBracket() {
+    int counter = 1;
+    String operand = "", x = "", y = "";
+    final holdsNumbersAndOperandInTheBracket =
+        this.holdsNumbersAndOperandInTheBracket;
+    if (holdsNumbersAndOperandInTheBracket != null) {
+      while (holdsNumbersAndOperandInTheBracket.isNotEmpty) {
+        if (counter == 1) {
+          x = holdsNumbersAndOperandInTheBracket.removeAt(0);
+        } else if (counter == 2) {
+          operand = holdsNumbersAndOperandInTheBracket.removeAt(0);
+        } else if (counter == 3) {
+          y = holdsNumbersAndOperandInTheBracket.removeAt(0);
+          counter = 1;
+          double? result = evaluate(x, y, operand);
+          if (result == null) {
+            if (kDebugMode) {
+              print("null with evaluation");
+            }
+          } else {
+            x = result.toString();
+          }
+        }
+        counter++;
+      }
+    }
+    return x;
   }
 }
