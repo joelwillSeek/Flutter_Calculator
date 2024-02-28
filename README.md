@@ -31,4 +31,4 @@ npm install
 
 <h1>Contact</h1>
 
-[Gmail]("joelthousend@gmail.com)
+[joelthousend@gmail.com]("joelthousend@gmail.com")
